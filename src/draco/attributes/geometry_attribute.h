@@ -177,43 +177,54 @@ class GeometryAttribute {
   template <typename OutT>
   bool ConvertValue(AttributeValueIndex att_id, int8_t out_num_components,
                     OutT* out_val) const {
+    return ConvertValue<OutT>(att_id, out_num_components,
+                              /*force_identity=*/false, out_val);
+  }
+
+  // Same as above, but when |force_identity| is true normalized re-scaling is
+  // bypassed and integer values are converted verbatim. This is used by the
+  // lossless compression path when widening an attribute into its portable
+  // integer representation.
+  template <typename OutT>
+  bool ConvertValue(AttributeValueIndex att_id, int8_t out_num_components,
+                    bool force_identity, OutT* out_val) const {
     if (out_val == nullptr) {
       return false;
     }
     switch (data_type_) {
       case DT_INT8:
         return ConvertTypedValue<int8_t, OutT>(att_id, out_num_components,
-                                               out_val);
+                                               force_identity, out_val);
       case DT_UINT8:
         return ConvertTypedValue<uint8_t, OutT>(att_id, out_num_components,
-                                                out_val);
+                                                force_identity, out_val);
       case DT_INT16:
         return ConvertTypedValue<int16_t, OutT>(att_id, out_num_components,
-                                                out_val);
+                                                force_identity, out_val);
       case DT_UINT16:
         return ConvertTypedValue<uint16_t, OutT>(att_id, out_num_components,
-                                                 out_val);
+                                                 force_identity, out_val);
       case DT_INT32:
         return ConvertTypedValue<int32_t, OutT>(att_id, out_num_components,
-                                                out_val);
+                                                force_identity, out_val);
       case DT_UINT32:
         return ConvertTypedValue<uint32_t, OutT>(att_id, out_num_components,
-                                                 out_val);
+                                                 force_identity, out_val);
       case DT_INT64:
         return ConvertTypedValue<int64_t, OutT>(att_id, out_num_components,
-                                                out_val);
+                                                force_identity, out_val);
       case DT_UINT64:
         return ConvertTypedValue<uint64_t, OutT>(att_id, out_num_components,
-                                                 out_val);
+                                                 force_identity, out_val);
       case DT_FLOAT32:
         return ConvertTypedValue<float, OutT>(att_id, out_num_components,
-                                              out_val);
+                                              force_identity, out_val);
       case DT_FLOAT64:
         return ConvertTypedValue<double, OutT>(att_id, out_num_components,
-                                               out_val);
+                                               force_identity, out_val);
       case DT_BOOL:
         return ConvertTypedValue<bool, OutT>(att_id, out_num_components,
-                                             out_val);
+                                             force_identity, out_val);
       default:
         // Wrong attribute type.
         return false;
@@ -304,6 +315,16 @@ class GeometryAttribute {
   template <typename T, typename OutT>
   bool ConvertTypedValue(AttributeValueIndex att_id, uint8_t out_num_components,
                          OutT* out_value) const {
+    return ConvertTypedValue<T, OutT>(att_id, out_num_components,
+                                      /*force_identity=*/false, out_value);
+  }
+
+  // Same as above, but allows the caller to bypass normalized re-scaling via
+  // |force_identity|. Used by the lossless compression path which must widen
+  // integer attributes to the portable integer format without altering them.
+  template <typename T, typename OutT>
+  bool ConvertTypedValue(AttributeValueIndex att_id, uint8_t out_num_components,
+                         bool force_identity, OutT* out_value) const {
     const uint8_t* src_address = GetAddress(att_id);
 
     // Convert all components available in both the original and output formats.
@@ -313,7 +334,7 @@ class GeometryAttribute {
       }
       const T in_value = *reinterpret_cast<const T*>(src_address);
       if (!ConvertComponentValue<T, OutT>(in_value, normalized_,
-                                          out_value + i)) {
+                                          force_identity, out_value + i)) {
         return false;
       }
       src_address += sizeof(T);
@@ -358,114 +379,173 @@ class GeometryAttribute {
   // Converts |in_value| of type T into |out_value| of type OutT. If
   // |normalized| is true, any conversion between floating point and integer
   // values will be treating integers as normalized types (the entire integer
-  // range will be used to represent 0-1 floating point range).
+  // range will be used to represent 0-1 floating point range). When both types
+  // are integers, the integer values are re-scaled through the shared 0-1
+  // semantics of their respective types (e.g. uint16 65535 maps to uint8 255
+  // rather than being truncated to 255).
   template <typename T, typename OutT>
   static bool ConvertComponentValue(const T& in_value, bool normalized,
                                     OutT* out_value) {
-    // Make sure the |in_value| can be represented as an integral type OutT.
+    return ConvertComponentValue(in_value, normalized, /*force_identity=*/false,
+                                 out_value);
+  }
+
+  // Same as above, but when |force_identity| is true the normalized re-scaling
+  // is bypassed entirely and the value is converted as a plain (non-normalized)
+  // integer. This is required by the lossless compression path, which widens
+  // integer attributes to a wider integer portable format purely as an
+  // internal transport and must preserve every sample bit-for-bit rather than
+  // re-interpret it through the 0-1 semantics.
+  template <typename T, typename OutT>
+  static bool ConvertComponentValue(const T& in_value, bool normalized,
+                                    bool force_identity, OutT* out_value) {
+    // The bool type does not have a meaningful normalized integer range, so it
+    // is always handled as a plain value regardless of |normalized|.
 #if __cplusplus >= 201703L
-    if constexpr (std::is_integral<OutT>::value) {
+    constexpr bool kBoolConversion = std::is_same<T, bool>::value ||
+                                     std::is_same<OutT, bool>::value;
+    constexpr bool kIntToIntConversion = std::is_integral<T>::value &&
+                                         std::is_integral<OutT>::value &&
+                                         !kBoolConversion;
 #else
-    if (std::is_integral<OutT>::value) {
+    const bool kBoolConversion = std::is_same<T, bool>::value ||
+                                 std::is_same<OutT, bool>::value;
+    const bool kIntToIntConversion = std::is_integral<T>::value &&
+                                     std::is_integral<OutT>::value &&
+                                     !kBoolConversion;
 #endif
-      // Make sure the |in_value| fits within the range of values that OutT
-      // is able to represent. Perform the check only for integral types.
+    if (!normalized || force_identity || kBoolConversion) {
+      // Make sure the |in_value| can be represented as an integral type OutT.
 #if __cplusplus >= 201703L
-      if constexpr (!std::is_same<T, bool>::value &&
-                    std::is_integral<T>::value) {
+      if constexpr (std::is_integral<OutT>::value) {
 #else
-      if (!std::is_same<T, bool>::value && std::is_integral<T>::value) {
+      if (std::is_integral<OutT>::value) {
 #endif
-        static constexpr OutT kOutMin =
-            std::is_signed<T>::value ? std::numeric_limits<OutT>::min() : 0;
-        if (in_value < kOutMin || in_value > std::numeric_limits<OutT>::max()) {
-          return false;
+        // Make sure the |in_value| fits within the range of values that OutT
+        // is able to represent. Perform the check only for integral types.
+#if __cplusplus >= 201703L
+        if constexpr (!std::is_same<T, bool>::value &&
+                      std::is_integral<T>::value) {
+#else
+        if (!std::is_same<T, bool>::value && std::is_integral<T>::value) {
+#endif
+          static constexpr OutT kOutMin =
+              std::is_signed<T>::value ? std::numeric_limits<OutT>::min() : 0;
+          if (in_value < kOutMin || in_value > std::numeric_limits<OutT>::max()) {
+            return false;
+          }
+        }
+
+        // Check conversion of floating point |in_value| to integral value
+        // OutT.
+#if __cplusplus >= 201703L
+        if constexpr (std::is_floating_point<T>::value) {
+#else
+        if (std::is_floating_point<T>::value) {
+#endif
+          // Make sure the floating point |in_value| is not NaN and not Inf as
+          // integral type OutT is unable to represent these values.
+          if (sizeof(in_value) > sizeof(double)) {
+            if (std::isnan(static_cast<long double>(in_value)) ||
+                std::isinf(static_cast<long double>(in_value))) {
+              return false;
+            }
+          } else if (sizeof(in_value) > sizeof(float)) {
+            if (std::isnan(static_cast<double>(in_value)) ||
+                std::isinf(static_cast<double>(in_value))) {
+              return false;
+            }
+          } else {
+            if (std::isnan(static_cast<float>(in_value)) ||
+                std::isinf(static_cast<float>(in_value))) {
+              return false;
+            }
+          }
+
+          // Make sure the floating point |in_value| fits within the range of
+          // values that integral type OutT is able to represent.
+          if (in_value < std::numeric_limits<OutT>::min() ||
+              in_value >= std::numeric_limits<OutT>::max()) {
+            return false;
+          }
         }
       }
 
-      // Check conversion of floating point |in_value| to integral value OutT.
-#if __cplusplus >= 201703L
-      if constexpr (std::is_floating_point<T>::value) {
-#else
-      if (std::is_floating_point<T>::value) {
-#endif
-        // Make sure the floating point |in_value| is not NaN and not Inf as
-        // integral type OutT is unable to represent these values.
-        if (sizeof(in_value) > sizeof(double)) {
-          if (std::isnan(static_cast<long double>(in_value)) ||
-              std::isinf(static_cast<long double>(in_value))) {
-            return false;
-          }
-        } else if (sizeof(in_value) > sizeof(float)) {
-          if (std::isnan(static_cast<double>(in_value)) ||
-              std::isinf(static_cast<double>(in_value))) {
-            return false;
-          }
-        } else {
-          if (std::isnan(static_cast<float>(in_value)) ||
-              std::isinf(static_cast<float>(in_value))) {
-            return false;
-          }
-        }
-
-        // Make sure the floating point |in_value| fits within the range of
-        // values that integral type OutT is able to represent.
-        if (in_value < std::numeric_limits<OutT>::min() ||
-            in_value >= std::numeric_limits<OutT>::max()) {
-          return false;
-        }
-      }
-    }
-
-    if (!normalized) {
       *out_value = static_cast<OutT>(in_value);
-    } else {
-#if __cplusplus >= 201703L
-      if constexpr (std::is_integral<T>::value &&
-                    std::is_floating_point<OutT>::value) {
-#else
-      if (std::is_integral<T>::value && std::is_floating_point<OutT>::value) {
-#endif
-        // When converting integer to floating point, normalize the value if
-        // necessary.
-        *out_value = static_cast<OutT>(in_value);
-        *out_value /= static_cast<OutT>(std::numeric_limits<T>::max());
-#if __cplusplus >= 201703L
-      } else if constexpr (std::is_floating_point<T>::value &&
-                           std::is_integral<OutT>::value) {
-#else
-      } else if (std::is_floating_point<T>::value &&
-                 std::is_integral<OutT>::value) {
-#endif
-        // Converting from floating point to a normalized integer.
-        if (in_value > 1 || in_value < 0) {
-          // Normalized float values need to be between 0 and 1.
-          return false;
-        }
-        // TODO(ostava): Consider allowing float to normalized integer
-        // conversion for 64-bit integer types. Currently it doesn't work
-        // because we don't have a floating point type that could store all 64
-        // bit integers.
-        if (sizeof(OutT) > 4) {
-          return false;
-        }
-        // Expand the float to the range of the output integer and round it to
-        // the nearest representable value. Use doubles for the math to ensure
-        // the integer values are represented properly during the conversion
-        // process.
-        *out_value = static_cast<OutT>(std::floor(
-            in_value * static_cast<double>(std::numeric_limits<OutT>::max()) +
-            0.5));
-      } else {
-        *out_value = static_cast<OutT>(in_value);
-      }
+      return true;
     }
 
-    // TODO(ostava): Add handling of normalized attributes when converting
-    // between different integer representations. If the attribute is
-    // normalized, integer values should be converted as if they represent 0-1
-    // range. E.g. when we convert uint16 to uint8, the range <0, 2^16 - 1>
-    // should be converted to range <0, 2^8 - 1>.
+#if __cplusplus >= 201703L
+    if constexpr (std::is_integral<T>::value &&
+                  std::is_floating_point<OutT>::value) {
+#else
+    if (std::is_integral<T>::value && std::is_floating_point<OutT>::value) {
+#endif
+      // When converting integer to floating point, normalize the value.
+      *out_value = static_cast<OutT>(in_value);
+      *out_value /= static_cast<OutT>(std::numeric_limits<T>::max());
+#if __cplusplus >= 201703L
+    } else if constexpr (std::is_floating_point<T>::value &&
+                         std::is_integral<OutT>::value) {
+#else
+    } else if (std::is_floating_point<T>::value &&
+               std::is_integral<OutT>::value) {
+#endif
+      // Converting from floating point to a normalized integer.
+      if (std::isnan(in_value) || in_value > 1 || in_value < 0) {
+        // Normalized float values need to be a finite number between 0 and 1.
+        return false;
+      }
+      // TODO(ostava): Consider allowing float to normalized integer
+      // conversion for 64-bit integer types. Currently it doesn't work
+      // because we don't have a floating point type that could store all 64
+      // bit integers.
+      if (sizeof(OutT) > 4) {
+        return false;
+      }
+      // Expand the float to the range of the output integer and round it to
+      // the nearest representable value. Use doubles for the math to ensure
+      // the integer values are represented properly during the conversion
+      // process.
+      *out_value = static_cast<OutT>(std::floor(
+          in_value * static_cast<double>(std::numeric_limits<OutT>::max()) +
+          0.5));
+#if __cplusplus >= 201703L
+    } else if constexpr (kIntToIntConversion) {
+#else
+    } else if (kIntToIntConversion) {
+#endif
+      // Re-scale the integer value through the normalized 0-1 semantics shared
+      // by both integer types. Each integer type maps 0 to 0 and its maximum
+      // representable value to 1, so the endpoints are preserved exactly
+      // (e.g. uint16 0 -> uint8 0 and uint16 65535 -> uint8 255) and values
+      // outside the representable output range are saturated to the output
+      // limits. Doubles are used for the intermediate math so that values of
+      // up to 32-bit integer types are converted without precision loss.
+      if (sizeof(T) > 4 || sizeof(OutT) > 4) {
+        // There is no floating point type that can exactly represent all
+        // 64-bit integer values.
+        return false;
+      }
+      const double normalized_value =
+          static_cast<double>(in_value) /
+          static_cast<double>(std::numeric_limits<T>::max());
+      const double scaled_value =
+          normalized_value *
+          static_cast<double>(std::numeric_limits<OutT>::max());
+      const double rounded_value = std::floor(scaled_value + 0.5);
+      if (rounded_value <=
+          static_cast<double>(std::numeric_limits<OutT>::min())) {
+        *out_value = std::numeric_limits<OutT>::min();
+      } else if (rounded_value >=
+                 static_cast<double>(std::numeric_limits<OutT>::max())) {
+        *out_value = std::numeric_limits<OutT>::max();
+      } else {
+        *out_value = static_cast<OutT>(rounded_value);
+      }
+    } else {
+      *out_value = static_cast<OutT>(in_value);
+    }
     return true;
   }
 

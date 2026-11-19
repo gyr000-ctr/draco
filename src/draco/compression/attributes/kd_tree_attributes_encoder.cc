@@ -100,7 +100,10 @@ bool KdTreeAttributesEncoder::TransformAttributesToPortableFormat() {
       std::vector<int32_t> act_value(att->num_components());
       for (AttributeValueIndex avi(0); avi < static_cast<uint32_t>(att->size());
            ++avi) {
-        att->ConvertValue<int32_t>(avi, &act_value[0]);
+        // Lossless transport conversion; keep the values identical to the
+        // ones produced below when the points are encoded.
+        att->ConvertValue<int32_t>(avi, att->num_components(),
+                                   /*force_identity=*/true, &act_value[0]);
         for (int c = 0; c < att->num_components(); ++c) {
           if (min_value[c] > act_value[c]) {
             min_value[c] = act_value[c];
@@ -233,7 +236,9 @@ bool KdTreeAttributesEncoder::EncodePortableAttributes(
       std::vector<uint32_t> unsigned_point(source_att->num_components());
       for (PointIndex pi(0); pi < num_points; ++pi) {
         const AttributeValueIndex avi = source_att->mapped_index(pi);
-        source_att->ConvertValue<int32_t>(avi, &signed_point[0]);
+        source_att->ConvertValue<int32_t>(avi, source_att->num_components(),
+                                          /*force_identity=*/true,
+                                          &signed_point[0]);
         for (int c = 0; c < source_att->num_components(); ++c) {
           unsigned_point[c] =
               signed_point[c] -
@@ -251,7 +256,10 @@ bool KdTreeAttributesEncoder::EncodePortableAttributes(
       std::vector<uint32_t> point(source_att->num_components());
       for (PointIndex pi(0); pi < num_points; ++pi) {
         const AttributeValueIndex avi = source_att->mapped_index(pi);
-        source_att->ConvertValue<uint32_t>(avi, &point[0]);
+        source_att->ConvertValue<uint32_t>(avi,
+                                           source_att->num_components(),
+                                           /*force_identity=*/true,
+                                           point.data());
         point_vector.CopyAttribute(source_att->num_components(),
                                    num_processed_components, pi.value(),
                                    point.data());

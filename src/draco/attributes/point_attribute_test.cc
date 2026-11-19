@@ -14,6 +14,9 @@
 //
 #include "draco/attributes/point_attribute.h"
 
+#include <array>
+#include <limits>
+
 #include "draco/core/draco_test_base.h"
 
 namespace {
@@ -123,6 +126,172 @@ TEST_F(PointAttributeTest, TestResize) {
   pa.Resize(10);
   ASSERT_EQ(pa.size(), 10);
   ASSERT_EQ(pa.buffer()->data_size(), 4 * 3 * 10);
+}
+
+TEST_F(PointAttributeTest, NormalizedUint16ToUint8Rescaling) {
+  // Converting a normalized uint16 attribute to uint8 must re-scale the values
+  // through the shared 0-1 semantics rather than truncating them. Endpoints
+  // must map exactly: 0 -> 0 and 65535 -> 255.
+  draco::PointAttribute pa;
+  pa.Init(draco::GeometryAttribute::COLOR, 1, draco::DT_UINT16, true, 4);
+  const uint16_t values[] = {0, 32768, 32767, 65535};
+  for (int i = 0; i < 4; ++i) {
+    pa.SetAttributeValue(draco::AttributeValueIndex(i), &values[i]);
+  }
+
+  std::array<uint8_t, 1> out;
+  ASSERT_TRUE((pa.ConvertValue<uint8_t, 1>(
+      draco::AttributeValueIndex(0), out.data())));
+  EXPECT_EQ(out[0], 0);
+
+  // 32768 / 65535 * 255 = 127.500..., rounds to 128 (the midpoint).
+  ASSERT_TRUE((pa.ConvertValue<uint8_t, 1>(
+      draco::AttributeValueIndex(1), out.data())));
+  EXPECT_EQ(out[0], 128);
+
+  // 32767 / 65535 * 255 = 127.496..., rounds to 127.
+  ASSERT_TRUE((pa.ConvertValue<uint8_t, 1>(
+      draco::AttributeValueIndex(2), out.data())));
+  EXPECT_EQ(out[0], 127);
+
+  ASSERT_TRUE((pa.ConvertValue<uint8_t, 1>(
+      draco::AttributeValueIndex(3), out.data())));
+  EXPECT_EQ(out[0], 255);
+}
+
+TEST_F(PointAttributeTest, NormalizedInt16ToInt8Rescaling) {
+  // Signed normalized integers must re-scale through their 0-1 semantics as
+  // well, using the symmetric max-value mapping that is consistent with the
+  // integer-to-float normalized conversion. The positive maximum 32767 must
+  // map to 127 and 0 must stay 0.
+  draco::PointAttribute pa;
+  pa.Init(draco::GeometryAttribute::GENERIC, 1, draco::DT_INT16, true, 3);
+  const int16_t values[] = {0, 32767, -32768};
+  for (int i = 0; i < 3; ++i) {
+    pa.SetAttributeValue(draco::AttributeValueIndex(i), &values[i]);
+  }
+
+  std::array<int8_t, 1> out;
+  ASSERT_TRUE((pa.ConvertValue<int8_t, 1>(
+      draco::AttributeValueIndex(0), out.data())));
+  EXPECT_EQ(out[0], 0);
+
+  ASSERT_TRUE((pa.ConvertValue<int8_t, 1>(
+      draco::AttributeValueIndex(1), out.data())));
+  EXPECT_EQ(out[0], 127);
+
+  // -32768 / 32767 * 127 = -127.004..., rounds to -127.
+  ASSERT_TRUE((pa.ConvertValue<int8_t, 1>(
+      draco::AttributeValueIndex(2), out.data())));
+  EXPECT_EQ(out[0], -127);
+}
+
+TEST_F(PointAttributeTest, NormalizedUint8ToUint16Rescaling) {
+  // Widening a normalized attribute must map the uint8 endpoints to the uint16
+  // endpoints exactly.
+  draco::PointAttribute pa;
+  pa.Init(draco::GeometryAttribute::COLOR, 1, draco::DT_UINT8, true, 3);
+  const uint8_t values[] = {0, 128, 255};
+  for (int i = 0; i < 3; ++i) {
+    pa.SetAttributeValue(draco::AttributeValueIndex(i), &values[i]);
+  }
+
+  std::array<uint16_t, 1> out;
+  ASSERT_TRUE((pa.ConvertValue<uint16_t, 1>(
+      draco::AttributeValueIndex(0), out.data())));
+  EXPECT_EQ(out[0], 0);
+
+  // 128 / 255 * 65535 = 32896.47..., rounds to 32896.
+  ASSERT_TRUE((pa.ConvertValue<uint16_t, 1>(
+      draco::AttributeValueIndex(1), out.data())));
+  EXPECT_EQ(out[0], 32896);
+
+  ASSERT_TRUE((pa.ConvertValue<uint16_t, 1>(
+      draco::AttributeValueIndex(2), out.data())));
+  EXPECT_EQ(out[0], 65535);
+}
+
+TEST_F(PointAttributeTest, NormalizedIntegerConversionSaturates) {
+  // On the normalized path every integer value represents a valid 0-1 sample,
+  // so conversions must saturate to the output endpoints instead of failing.
+  draco::PointAttribute pa;
+  pa.Init(draco::GeometryAttribute::GENERIC, 1, draco::DT_INT16, true, 2);
+  const int16_t values[] = {-32768, 32767};
+  for (int i = 0; i < 2; ++i) {
+    pa.SetAttributeValue(draco::AttributeValueIndex(i), &values[i]);
+  }
+
+  std::array<uint8_t, 1> out;
+  // -32768 / 32767 is negative, which cannot be represented by uint8 and must
+  // be saturated to 0 rather than rejected.
+  ASSERT_TRUE((pa.ConvertValue<uint8_t, 1>(
+      draco::AttributeValueIndex(0), out.data())));
+  EXPECT_EQ(out[0], 0);
+
+  ASSERT_TRUE((pa.ConvertValue<uint8_t, 1>(
+      draco::AttributeValueIndex(1), out.data())));
+  EXPECT_EQ(out[0], 255);
+}
+
+TEST_F(PointAttributeTest, NormalizedFloatNaNToIntegerIsRejected) {
+  // A NaN (or out-of-range) normalized float must be rejected rather than
+  // cast into an integer, which would be undefined behavior.
+  draco::PointAttribute pa;
+  pa.Init(draco::GeometryAttribute::COLOR, 1, draco::DT_FLOAT32, true, 3);
+  const float values[] = {std::numeric_limits<float>::quiet_NaN(), 1.0f, 2.0f};
+  for (int i = 0; i < 3; ++i) {
+    pa.SetAttributeValue(draco::AttributeValueIndex(i), &values[i]);
+  }
+
+  std::array<uint8_t, 1> out;
+  EXPECT_FALSE((pa.ConvertValue<uint8_t, 1>(
+      draco::AttributeValueIndex(0), out.data())));
+  ASSERT_TRUE((pa.ConvertValue<uint8_t, 1>(
+      draco::AttributeValueIndex(1), out.data())));
+  EXPECT_EQ(out[0], 255);
+  EXPECT_FALSE((pa.ConvertValue<uint8_t, 1>(
+      draco::AttributeValueIndex(2), out.data())));
+}
+
+TEST_F(PointAttributeTest, NormalizedSameWidthIsIdentity) {
+  // Re-scaling between integer types of the same width must leave every value
+  // unchanged.
+  draco::PointAttribute pa;
+  pa.Init(draco::GeometryAttribute::COLOR, 1, draco::DT_UINT16, true, 4);
+  const uint16_t values[] = {0, 123, 32768, 65535};
+  for (int i = 0; i < 4; ++i) {
+    pa.SetAttributeValue(draco::AttributeValueIndex(i), &values[i]);
+  }
+
+  for (int i = 0; i < 4; ++i) {
+    std::array<uint16_t, 1> out;
+    ASSERT_TRUE((pa.ConvertValue<uint16_t, 1>(
+        draco::AttributeValueIndex(i), out.data())));
+    EXPECT_EQ(out[0], values[i]);
+  }
+}
+
+TEST_F(PointAttributeTest, NonNormalizedIntegerConversionIsUnchanged) {
+  // Non-normalized integer attributes must keep the per-sample identity
+  // semantics: values that fit are converted verbatim and values that do not
+  // fit into the output range must be rejected instead of being re-scaled.
+  draco::PointAttribute pa;
+  pa.Init(draco::GeometryAttribute::GENERIC, 1, draco::DT_UINT16, false, 3);
+  const uint16_t values[] = {0, 255, 65535};
+  for (int i = 0; i < 3; ++i) {
+    pa.SetAttributeValue(draco::AttributeValueIndex(i), &values[i]);
+  }
+
+  std::array<uint8_t, 1> out;
+  ASSERT_TRUE((pa.ConvertValue<uint8_t, 1>(
+      draco::AttributeValueIndex(0), out.data())));
+  EXPECT_EQ(out[0], 0);
+  ASSERT_TRUE((pa.ConvertValue<uint8_t, 1>(
+      draco::AttributeValueIndex(1), out.data())));
+  EXPECT_EQ(out[0], 255);
+  // 65535 cannot be represented by uint8 on the non-normalized path.
+  EXPECT_FALSE((pa.ConvertValue<uint8_t, 1>(
+      draco::AttributeValueIndex(2), out.data())));
 }
 
 }  // namespace

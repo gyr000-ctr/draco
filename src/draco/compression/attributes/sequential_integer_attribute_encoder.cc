@@ -211,7 +211,11 @@ bool SequentialIntegerAttributeEncoder::PrepareValues(
   int32_t* const portable_attribute_data = GetPortableAttributeData();
   for (PointIndex pi : point_ids) {
     const AttributeValueIndex att_id = attrib->mapped_index(pi);
-    if (!attrib->ConvertValue<int32_t>(att_id,
+    // The int32 portable attribute is a lossless transport representation, so
+    // the values must be widened verbatim. Bypass normalized re-scaling to keep
+    // the encoded bit stream identical for normalized integer attributes.
+    if (!attrib->ConvertValue<int32_t>(att_id, num_components,
+                                       /*force_identity=*/true,
                                        portable_attribute_data + dst_index)) {
       return false;
     }

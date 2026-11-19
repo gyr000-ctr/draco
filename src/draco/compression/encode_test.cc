@@ -816,4 +816,60 @@ TEST_F(EncodeTest, TestIntegerNormalsAtSpeedZeroRoundTrip) {
   ASSERT_EQ(got, want);
 }
 
+TEST_F(EncodeTest, NormalizedIntegerAttributeSequentialEncodingIsLossless) {
+  // Regression test: a normalized integer attribute that is widened to the
+  // int32 portable format during sequential encoding must keep every sample
+  // bit-for-bit. The normalized 0-1 re-scaling must not be applied to the
+  // internal lossless transport conversion.
+  constexpr int kNumPoints = 4;
+  draco::PointCloudBuilder pc_builder;
+  pc_builder.Start(kNumPoints);
+  const int32_t pos_att_id = pc_builder.AddAttribute(
+      draco::GeometryAttribute::POSITION, 3, draco::DT_FLOAT32);
+  const int32_t col_att_id = pc_builder.AddAttribute(
+      draco::GeometryAttribute::COLOR, 1, draco::DT_UINT16, true);
+  const std::vector<uint16_t> colors{0, 32768, 32767, 65535};
+  for (draco::PointIndex i(0); i < kNumPoints; ++i) {
+    pc_builder.SetAttributeValueForPoint(
+        pos_att_id, i,
+        draco::Vector3f(static_cast<float>(i.value()), 0.f, 0.f).data());
+    pc_builder.SetAttributeValueForPoint(col_att_id, i, &colors[i.value()]);
+  }
+  std::unique_ptr<draco::PointCloud> pc = pc_builder.Finalize(false);
+  ASSERT_NE(pc, nullptr);
+  ASSERT_TRUE(pc->attribute(col_att_id)->normalized());
+
+  draco::EncoderBuffer buffer;
+  draco::Encoder encoder;
+  encoder.SetEncodingMethod(draco::POINT_CLOUD_SEQUENTIAL_ENCODING);
+  encoder.SetAttributeQuantization(draco::GeometryAttribute::POSITION, 14);
+  ASSERT_TRUE(encoder.EncodePointCloudToBuffer(*pc, &buffer).ok());
+
+  draco::Decoder decoder;
+  draco::DecoderBuffer decoder_buffer;
+  decoder_buffer.Init(buffer.data(), buffer.size());
+  auto result = decoder.DecodePointCloudFromBuffer(&decoder_buffer);
+  ASSERT_TRUE(result.ok()) << result.status().error_msg();
+  const std::unique_ptr<draco::PointCloud> decoded =
+      std::move(result).value();
+
+  const draco::PointAttribute *const out_col =
+      decoded->GetNamedAttribute(draco::GeometryAttribute::COLOR);
+  ASSERT_NE(out_col, nullptr);
+  ASSERT_EQ(out_col->data_type(), draco::DT_UINT16);
+  ASSERT_TRUE(out_col->normalized());
+
+  // The encoder may reorder points, so compare the decoded samples as a set.
+  std::vector<uint16_t> got;
+  for (draco::AttributeValueIndex avi(0); avi < out_col->size(); ++avi) {
+    uint16_t value;
+    out_col->GetValue(avi, &value);
+    got.push_back(value);
+  }
+  std::vector<uint16_t> want = colors;
+  std::sort(want.begin(), want.end());
+  std::sort(got.begin(), got.end());
+  ASSERT_EQ(got, want);
+}
+
 }  // namespace
