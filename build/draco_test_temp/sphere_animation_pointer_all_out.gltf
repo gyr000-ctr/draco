@@ -1,0 +1,365 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "draco_decoder"
+  },
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "nodes": [
+    {
+      "mesh": 0
+    }
+  ],
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 2,
+            "POSITION": 1,
+            "TANGENT": 4,
+            "TEXCOORD_0": 3
+          },
+          "indices": 0,
+          "mode": 4,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5121,
+      "count": 672,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 231,
+      "max": [
+        1,
+        1,
+        1
+      ],
+      "min": [
+        -1,
+        -1,
+        -1
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 231,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 231,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 231,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5126,
+      "count": 10,
+      "max": [
+        9
+      ],
+      "min": [
+        0
+      ],
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5126,
+      "count": 10,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 7,
+      "componentType": 5126,
+      "count": 10,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 8,
+      "componentType": 5126,
+      "count": 10,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 9,
+      "componentType": 5126,
+      "count": 10,
+      "type": "VEC3"
+    }
+  ],
+  "animations": [
+    {
+      "name": "PointerAnimation",
+      "samplers": [
+        {
+          "input": 5,
+          "interpolation": "LINEAR",
+          "output": 6
+        },
+        {
+          "input": 5,
+          "interpolation": "LINEAR",
+          "output": 7
+        },
+        {
+          "input": 5,
+          "interpolation": "LINEAR",
+          "output": 8
+        },
+        {
+          "input": 5,
+          "interpolation": "LINEAR",
+          "output": 9
+        },
+        {
+          "input": 5,
+          "interpolation": "LINEAR",
+          "output": 6
+        }
+      ],
+      "channels": [
+        {
+          "sampler": 0,
+          "target": {
+            "path": "pointer",
+            "extensions": {
+              "KHR_animation_pointer": {
+                "pointer": "/materials/0/pbrMetallicRoughness/baseColorFactor"
+              }
+            }
+          }
+        },
+        {
+          "sampler": 1,
+          "target": {
+            "path": "pointer",
+            "extensions": {
+              "KHR_animation_pointer": {
+                "pointer": "/materials/0/pbrMetallicRoughness/baseColorTexture/extensions/KHR_texture_transform/offset"
+              }
+            }
+          }
+        },
+        {
+          "sampler": 2,
+          "target": {
+            "path": "pointer",
+            "extensions": {
+              "KHR_animation_pointer": {
+                "pointer": "/materials/0/extensions/KHR_materials_emissive_strength/emissiveStrength"
+              }
+            }
+          }
+        },
+        {
+          "sampler": 3,
+          "target": {
+            "path": "pointer",
+            "extensions": {
+              "KHR_animation_pointer": {
+                "pointer": "/nodes/0/translation"
+              }
+            }
+          }
+        },
+        {
+          "sampler": 4,
+          "target": {
+            "path": "pointer",
+            "extensions": {
+              "KHR_animation_pointer": {
+                "pointer": "/materials/0/extensions/KHR_materials_iridescence/iridescenceFactor"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0,
+          "extensions": {
+            "KHR_texture_transform": {
+              "offset": [
+                0,
+                0
+              ],
+              "rotation": 0,
+              "scale": [
+                1,
+                1
+              ]
+            }
+          }
+        },
+        "baseColorFactor": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1
+      },
+      "normalTexture": {
+        "index": 1,
+        "texCoord": 0,
+        "extensions": {
+          "KHR_texture_transform": {
+            "offset": [
+              0,
+              0
+            ],
+            "rotation": 0,
+            "scale": [
+              1,
+              1
+            ]
+          }
+        }
+      },
+      "emissiveFactor": [
+        1,
+        1,
+        1
+      ],
+      "alphaMode": "OPAQUE",
+      "extensions": {
+        "KHR_materials_emissive_strength": {
+          "emissiveStrength": 5
+        },
+        "KHR_materials_iridescence": {
+          "iridescenceFactor": 1,
+          "iridescenceIor": 1.5,
+          "iridescenceThicknessMinimum": 200,
+          "iridescenceThicknessMaximum": 500
+        },
+        "KHR_materials_anisotropy": {
+          "anisotropyStrength": 0.5,
+          "anisotropyRotation": 1
+        },
+        "KHR_materials_diffuse_transmission": {
+          "diffuseTransmissionFactor": 0.80000001192092896,
+          "diffuseTransmissionColorFactor": [
+            1,
+            0.5,
+            0.20000000298023224
+          ]
+        }
+      }
+    }
+  ],
+  "textures": [
+    {
+      "source": 0
+    },
+    {
+      "source": 1
+    }
+  ],
+  "images": [
+    {
+      "uri": "sphere_Texture1_BaseColor.png"
+    },
+    {
+      "uri": "sphere_Texture0_Normal.png"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 672
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 672,
+      "byteLength": 2772
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 3444,
+      "byteLength": 2772
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 6216,
+      "byteLength": 1848
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 8064,
+      "byteLength": 3696
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11760,
+      "byteLength": 40
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11800,
+      "byteLength": 160
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 11960,
+      "byteLength": 80
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 12040,
+      "byteLength": 40
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 12080,
+      "byteLength": 120
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 12200,
+      "uri": "sphere_animation_pointer_all_out.bin"
+    }
+  ],
+  "extensionsRequired": [
+    "KHR_texture_transform"
+  ],
+  "extensionsUsed": [
+    "KHR_animation_pointer",
+    "KHR_materials_anisotropy",
+    "KHR_materials_diffuse_transmission",
+    "KHR_materials_emissive_strength",
+    "KHR_materials_iridescence",
+    "KHR_texture_transform"
+  ]
+}

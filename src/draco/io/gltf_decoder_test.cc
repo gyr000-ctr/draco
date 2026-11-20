@@ -749,14 +749,267 @@ TEST(GltfDecoderTest, VertexColorTest) {
   EXPECT_EQ(second_mesh.NumNamedAttributes(GeometryAttribute::COLOR), 1);
 }
 
+namespace {
+// Expected dense geometry of the Khronos SimpleSparseAccessor model after
+// applying its sparse accessor (sparse indices 8, 10, 12 with values
+// (1, 2, 0), (3, 3, 0) and (5, 4, 0) on top of the dense base positions).
+const std::array<Vector3f, 14> kSimpleSparseAccessorPositions = {{
+    Vector3f(0.f, 0.f, 0.f), Vector3f(1.f, 0.f, 0.f), Vector3f(2.f, 0.f, 0.f),
+    Vector3f(3.f, 0.f, 0.f), Vector3f(4.f, 0.f, 0.f), Vector3f(5.f, 0.f, 0.f),
+    Vector3f(6.f, 0.f, 0.f), Vector3f(0.f, 1.f, 0.f), Vector3f(1.f, 2.f, 0.f),
+    Vector3f(2.f, 1.f, 0.f), Vector3f(3.f, 3.f, 0.f), Vector3f(4.f, 1.f, 0.f),
+    Vector3f(5.f, 4.f, 0.f), Vector3f(6.f, 1.f, 0.f)}};
+
+constexpr std::array<std::array<uint32_t, 3>, 12> kSimpleSparseAccessorFaces =
+    {{{0, 8, 7},  {0, 1, 8},  {1, 9, 8},  {1, 2, 9},
+      {2, 10, 9}, {2, 3, 10}, {3, 11, 10}, {3, 4, 11},
+      {4, 12, 11}, {4, 5, 12}, {5, 13, 12}, {5, 6, 13}}};
+
+void ExpectSimpleSparseAccessorGeometry(const Scene& scene) {
+  ASSERT_EQ(scene.NumMeshes(), 1);
+  const Mesh& mesh = scene.GetMesh(MeshIndex(0));
+  // All 14 positions of the model are distinct so vertex deduplication keeps
+  // the point count, but it may reorder the points. Verify the geometry
+  // through the faces instead of relying on the point order.
+  ASSERT_EQ(mesh.num_points(), 14);
+  ASSERT_EQ(mesh.num_faces(), 12);
+  const PointAttribute* const pos_att =
+      mesh.GetNamedAttribute(GeometryAttribute::POSITION);
+  ASSERT_NE(pos_att, nullptr);
+  for (FaceIndex fi(0); fi < mesh.num_faces(); ++fi) {
+    const Mesh::Face& face = mesh.face(fi);
+    for (int c = 0; c < 3; ++c) {
+      std::array<float, 3> value;
+      pos_att->GetValue(pos_att->mapped_index(face[c]), value.data());
+      const Vector3f& expected =
+          kSimpleSparseAccessorPositions
+              [kSimpleSparseAccessorFaces[fi.value()][c]];
+      for (int d = 0; d < 3; ++d) {
+        EXPECT_EQ(value[d], expected[d])
+            << "face " << fi.value() << " corner " << c;
+      }
+    }
+  }
+}
+
+// Compares positions and faces of all meshes in two scenes value-by-value.
+void ExpectSameGeometry(const Scene& scene_a, const Scene& scene_b) {
+  ASSERT_EQ(scene_a.NumMeshes(), scene_b.NumMeshes());
+  for (MeshIndex mi(0); mi < scene_a.NumMeshes(); ++mi) {
+    const Mesh& mesh_a = scene_a.GetMesh(mi);
+    const Mesh& mesh_b = scene_b.GetMesh(mi);
+    ASSERT_EQ(mesh_a.num_points(), mesh_b.num_points());
+    ASSERT_EQ(mesh_a.num_faces(), mesh_b.num_faces());
+    const PointAttribute* const att_a =
+        mesh_a.GetNamedAttribute(GeometryAttribute::POSITION);
+    const PointAttribute* const att_b =
+        mesh_b.GetNamedAttribute(GeometryAttribute::POSITION);
+    ASSERT_NE(att_a, nullptr);
+    ASSERT_NE(att_b, nullptr);
+    ASSERT_EQ(att_a->size(), att_b->size());
+    for (AttributeValueIndex avi(0); avi < att_a->size(); ++avi) {
+      std::array<float, 3> value_a, value_b;
+      att_a->GetValue(avi, value_a.data());
+      att_b->GetValue(avi, value_b.data());
+      EXPECT_EQ(value_a, value_b) << "attribute value " << avi.value();
+    }
+    for (FaceIndex fi(0); fi < mesh_a.num_faces(); ++fi) {
+      EXPECT_EQ(mesh_a.face(fi), mesh_b.face(fi)) << "face " << fi.value();
+    }
+  }
+}
+
+// Reads the Khronos SimpleSparseAccessor glTF and its binary buffer.
+void ReadSimpleSparseAccessorFiles(std::string* gltf_json,
+                                   std::vector<char>* bin_data) {
+  const std::string gltf_path = GetTestFileFullPath(
+      "KhronosSampleModels/SimpleSparseAccessor/glTF/"
+      "SimpleSparseAccessor.gltf");
+  const std::string bin_path = GetTestFileFullPath(
+      "KhronosSampleModels/SimpleSparseAccessor/glTF/"
+      "SimpleSparseAccessor.bin");
+  std::vector<char> gltf_data;
+  ASSERT_TRUE(ReadFileToBuffer(gltf_path, &gltf_data));
+  *gltf_json = std::string(gltf_data.begin(), gltf_data.end());
+  ASSERT_TRUE(ReadFileToBuffer(bin_path, bin_data));
+  ASSERT_EQ(bin_data->size(), 284);
+}
+
+// Writes |gltf_json| and |bin_data| as |test_name|.gltf and |test_name|.bin
+// to the test temp directory, updating the buffer uri in the glTF JSON, and
+// returns the full path of the written glTF file.
+std::string WriteSparseTestFiles(const std::string& test_name,
+                                 std::string gltf_json,
+                                 const std::vector<char>& bin_data) {
+  const std::string bin_name = test_name + ".bin";
+  const std::string gltf_name = test_name + ".gltf";
+  const size_t uri_pos = gltf_json.find("SimpleSparseAccessor.bin");
+  if (uri_pos != std::string::npos) {
+    gltf_json.replace(uri_pos, 24, bin_name);
+  }
+  const std::string gltf_path = GetTestTempFileFullPath(gltf_name);
+  const std::string bin_path = GetTestTempFileFullPath(bin_name);
+  EXPECT_TRUE(WriteBufferToFile(gltf_json.data(), gltf_json.size(), gltf_path));
+  EXPECT_TRUE(WriteBufferToFile(bin_data.data(), bin_data.size(), bin_path));
+  return gltf_path;
+}
+
+// Decodes a modified copy of the SimpleSparseAccessor model and checks that
+// decoding fails with an error message containing |error_substring|.
+void ExpectSparseDecodeError(const std::string& test_name,
+                             const std::string& gltf_json,
+                             const std::vector<char>& bin_data,
+                             const std::string& error_substring) {
+  const std::string gltf_path =
+      WriteSparseTestFiles(test_name, gltf_json, bin_data);
+  GltfDecoder decoder;
+  const auto maybe_scene = decoder.DecodeFromFileToScene(gltf_path);
+  ASSERT_FALSE(maybe_scene.ok());
+  EXPECT_NE(maybe_scene.status().error_msg_string().find(error_substring),
+            std::string::npos)
+      << maybe_scene.status().error_msg_string();
+}
+}  // namespace
+
 TEST(GltfDecoderTest, SparseAccessors) {
   const std::string filename =
       "KhronosSampleModels/SimpleSparseAccessor/glTF/SimpleSparseAccessor.gltf";
   const std::string path = GetTestFileFullPath(filename);
   GltfDecoder decoder;
   const auto maybe_scene = decoder.DecodeFromFileToScene(path);
-  EXPECT_FALSE(maybe_scene.ok());
-  EXPECT_EQ(maybe_scene.status().code(), Status::Code::UNSUPPORTED_FEATURE);
+  ASSERT_TRUE(maybe_scene.ok()) << maybe_scene.status().error_msg_string();
+  ExpectSimpleSparseAccessorGeometry(*maybe_scene.value());
+
+  // Decoding to a mesh should succeed as well.
+  GltfDecoder mesh_decoder;
+  const auto maybe_mesh = mesh_decoder.DecodeFromFile(path);
+  ASSERT_TRUE(maybe_mesh.ok()) << maybe_mesh.status().error_msg_string();
+  EXPECT_EQ(maybe_mesh.value()->num_faces(), 12);
+}
+
+TEST(GltfDecoderTest, SparseAccessorIndexOutOfBounds) {
+  std::string gltf_json;
+  std::vector<char> bin_data;
+  ReadSimpleSparseAccessorFiles(&gltf_json, &bin_data);
+
+  // Shrink the accessor count so that the sparse index 12 is out of bounds.
+  const size_t pos = gltf_json.find("\"count\":14");
+  ASSERT_NE(pos, std::string::npos);
+  gltf_json.replace(pos, 10, "\"count\":12");
+  ExpectSparseDecodeError("sparse_index_out_of_bounds", gltf_json, bin_data,
+                          "out of bounds");
+}
+
+TEST(GltfDecoderTest, SparseAccessorDuplicateIndices) {
+  std::string gltf_json;
+  std::vector<char> bin_data;
+  ReadSimpleSparseAccessorFiles(&gltf_json, &bin_data);
+
+  // Sparse indices are uint16 values 8, 10, 12 at byte offset 240 of the
+  // buffer. Change the last index to 10 to create a duplicate.
+  ASSERT_EQ(bin_data[240], 8);
+  ASSERT_EQ(bin_data[242], 10);
+  ASSERT_EQ(bin_data[244], 12);
+  bin_data[244] = 10;
+  bin_data[245] = 0;
+  ExpectSparseDecodeError("sparse_duplicate_indices", gltf_json, bin_data,
+                          "duplicate");
+}
+
+TEST(GltfDecoderTest, SparseAccessorCountMismatch) {
+  std::string gltf_json;
+  std::vector<char> bin_data;
+  ReadSimpleSparseAccessorFiles(&gltf_json, &bin_data);
+
+  // The sparse indices and values buffer views hold data for 3 entries only.
+  const size_t pos = gltf_json.find("\"count\":3,");
+  ASSERT_NE(pos, std::string::npos);
+  gltf_json.replace(pos, 10, "\"count\":4,");
+  ExpectSparseDecodeError("sparse_count_mismatch", gltf_json, bin_data,
+                          "past the end of the bufferView");
+}
+
+TEST(GltfDecoderTest, SparseAccessorTranscodeRoundTrip) {
+  // Decode the model with the sparse accessor.
+  const std::string filename =
+      "KhronosSampleModels/SimpleSparseAccessor/glTF/SimpleSparseAccessor.gltf";
+  std::unique_ptr<Scene> scene_sparse(DecodeGltfFileToScene(filename));
+  ASSERT_NE(scene_sparse, nullptr);
+
+  // Create an equivalent dense glTF model by applying the sparse accessor by
+  // hand: copy the base positions and overwrite entries at the sparse
+  // indices with the sparse values.
+  std::string gltf_json;
+  std::vector<char> bin_data;
+  ReadSimpleSparseAccessorFiles(&gltf_json, &bin_data);
+  std::vector<char> dense_bin(240, 0);
+  memcpy(dense_bin.data(), bin_data.data(), 240);  // Indices and positions.
+  for (int i = 0; i < 3; ++i) {
+    uint16_t index = 0;
+    memcpy(&index, bin_data.data() + 240 + 2 * i, 2);
+    memcpy(dense_bin.data() + 72 + 12 * index, bin_data.data() + 248 + 12 * i,
+           12);
+  }
+  const std::string dense_json = R"glTF({
+    "scenes": [{"nodes": [0]}],
+    "nodes": [{"mesh": 0}],
+    "meshes": [{"primitives": [{"attributes": {"POSITION": 1}, "indices": 0}]}],
+    "buffers": [{"uri": "sparse_dense_reference.bin", "byteLength": 240}],
+    "bufferViews": [
+      {"buffer": 0, "byteOffset": 0, "byteLength": 72, "target": 34963},
+      {"buffer": 0, "byteOffset": 72, "byteLength": 168}
+    ],
+    "accessors": [
+      {"bufferView": 0, "byteOffset": 0, "componentType": 5123, "count": 36,
+       "type": "SCALAR", "max": [13], "min": [0]},
+      {"bufferView": 1, "byteOffset": 0, "componentType": 5126, "count": 14,
+       "type": "VEC3", "max": [6.0, 4.0, 0.0], "min": [0.0, 0.0, 0.0]}
+    ],
+    "asset": {"version": "2.0"}
+  })glTF";
+  const std::string dense_gltf_path =
+      WriteSparseTestFiles("sparse_dense_reference", dense_json, dense_bin);
+  GltfDecoder dense_decoder;
+  auto maybe_dense_scene =
+      dense_decoder.DecodeFromFileToScene(dense_gltf_path);
+  ASSERT_TRUE(maybe_dense_scene.ok())
+      << maybe_dense_scene.status().error_msg_string();
+  std::unique_ptr<Scene> scene_dense = std::move(maybe_dense_scene).value();
+
+  // The sparse model decoded by the decoder must be value-by-value identical
+  // to the dense version.
+  ExpectSameGeometry(*scene_sparse, *scene_dense);
+
+  // Transcode both models with Draco compression and decode them back.
+  std::unique_ptr<Scene> roundtrip_sparse;
+  std::unique_ptr<Scene> roundtrip_dense;
+  for (int i = 0; i < 2; ++i) {
+    Scene* scene = (i == 0) ? scene_sparse.get() : scene_dense.get();
+    const DracoCompressionOptions options;
+    SceneUtils::SetDracoCompressionOptions(&options, scene);
+    GltfEncoder encoder;
+    EncoderBuffer buffer;
+    ASSERT_TRUE(encoder.EncodeToBuffer<Scene>(*scene, &buffer).ok());
+    // The transcoded glTF must use Draco mesh compression.
+    const std::string glb_string(buffer.data(),
+                                 buffer.data() + buffer.size());
+    EXPECT_NE(glb_string.find("KHR_draco_mesh_compression"),
+              std::string::npos);
+    DecoderBuffer decoder_buffer;
+    decoder_buffer.Init(buffer.data(), buffer.size());
+    GltfDecoder decoder;
+    auto maybe_scene = decoder.DecodeFromBufferToScene(&decoder_buffer);
+    ASSERT_TRUE(maybe_scene.ok()) << maybe_scene.status().error_msg_string();
+    if (i == 0) {
+      roundtrip_sparse = std::move(maybe_scene).value();
+    } else {
+      roundtrip_dense = std::move(maybe_scene).value();
+    }
+  }
+
+  // The transcoded sparse model must be value-by-value identical to the
+  // transcoded dense model.
+  ExpectSameGeometry(*roundtrip_sparse, *roundtrip_dense);
 }
 
 TEST(GltfDecoderTest, PbrSpecularGlossinessExtension) {

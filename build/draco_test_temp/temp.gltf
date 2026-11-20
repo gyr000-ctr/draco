@@ -1,0 +1,293 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "draco_decoder",
+    "copyright": "Copyright 2018 Analytical Graphics, Inc., CC-BY 4.0 https://creativecommons.org/licenses/by/4.0/ - Mesh and textures by Ed Mackey."
+  },
+  "scenes": [
+    {
+      "nodes": [
+        0,
+        1
+      ]
+    }
+  ],
+  "scene": 0,
+  "nodes": [
+    {
+      "name": "Labels",
+      "mesh": 0,
+      "translation": [
+        0,
+        0,
+        0.91260796785354614
+      ],
+      "rotation": [
+        0.7071068286895752,
+        0,
+        -0,
+        0.7071068286895752
+      ]
+    },
+    {
+      "name": "VertexColorTest",
+      "mesh": 1,
+      "scale": [
+        1,
+        1,
+        0.074133932590484619
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "LabelMesh",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 2,
+            "POSITION": 1,
+            "TANGENT": 4,
+            "TEXCOORD_0": 3
+          },
+          "indices": 0,
+          "mode": 4,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "VertexColorTestMesh",
+      "primitives": [
+        {
+          "attributes": {
+            "COLOR_0": 8,
+            "NORMAL": 7,
+            "POSITION": 6,
+            "TANGENT": 10,
+            "TEXCOORD_0": 9
+          },
+          "indices": 5,
+          "mode": 4,
+          "material": 1
+        }
+      ]
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5121,
+      "count": 36,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 24,
+      "max": [
+        0.7554783821105957,
+        -0.85124164819717407,
+        0.97503286600112915
+      ],
+      "min": [
+        -0.70456582307815552,
+        -0.85124170780181885,
+        -0.96111547946929932
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5121,
+      "count": 72,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5126,
+      "count": 48,
+      "max": [
+        1.0000004768371582,
+        1,
+        0.48742246627807617
+      ],
+      "min": [
+        -1.0000003576278687,
+        -1,
+        -0.17186653614044189
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 7,
+      "componentType": 5126,
+      "count": 48,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 8,
+      "componentType": 5126,
+      "count": 48,
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 9,
+      "componentType": 5126,
+      "count": 48,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 10,
+      "componentType": 5126,
+      "count": 48,
+      "type": "VEC4"
+    }
+  ],
+  "materials": [
+    {
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        },
+        "baseColorFactor": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.89999997615814209
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "name": "Label_Mat",
+      "doubleSided": true
+    },
+    {
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 1,
+          "texCoord": 0
+        },
+        "baseColorFactor": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.89999997615814209
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "name": "VC_Checks_Mat"
+    }
+  ],
+  "textures": [
+    {
+      "source": 0
+    },
+    {
+      "source": 1
+    }
+  ],
+  "images": [
+    {
+      "uri": "VertexColorTestLabels.png"
+    },
+    {
+      "uri": "VertexColorChecks.png"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 36
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 36,
+      "byteLength": 288
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 324,
+      "byteLength": 288
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 612,
+      "byteLength": 192
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 804,
+      "byteLength": 384
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1188,
+      "byteLength": 72
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1260,
+      "byteLength": 576
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1836,
+      "byteLength": 576
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 2412,
+      "byteLength": 768
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 3180,
+      "byteLength": 384
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 3564,
+      "byteLength": 768
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 4332,
+      "uri": "buffer0.bin"
+    }
+  ]
+}

@@ -115,6 +115,15 @@ class GltfDecoder {
   // UNSUPPORTED_FEATURE.
   Status CheckUnsupportedFeatures();
 
+  // Replaces all sparse accessors in |gltf_model_| with equivalent dense
+  // accessors by applying the sparse indices and values on top of the dense
+  // base data (or zeros when the accessor has no base bufferView). The dense
+  // data is stored in newly added buffers and buffer views of |gltf_model_|.
+  // Returns an error status when the sparse data is invalid, e.g., when a
+  // sparse index is out of bounds, duplicated, or when the sparse count does
+  // not match the data in the buffer views.
+  Status DensifySparseAccessors();
+
   // Decodes a glTF Node as well as any child Nodes. If |node| contains a mesh
   // it will process all of the mesh's primitives.
   Status DecodeNode(int node_index, const Eigen::Matrix4d& parent_matrix);

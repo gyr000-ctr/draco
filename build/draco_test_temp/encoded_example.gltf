@@ -1,0 +1,207 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "draco_decoder",
+    "copyright": "hiloteam"
+  },
+  "scenes": [
+    {
+      "nodes": [
+        0,
+        1
+      ]
+    }
+  ],
+  "scene": 0,
+  "nodes": [
+    {
+      "name": "Cube",
+      "mesh": 0
+    },
+    {
+      "name": "Camera",
+      "children": [
+        2
+      ],
+      "translation": [
+        7.4811315536499023,
+        5.3436651229858398,
+        6.5076398849487305
+      ],
+      "rotation": [
+        0.48353603482246399,
+        0.33687159419059753,
+        -0.20870360732078552,
+        0.7804827094078064
+      ]
+    },
+    {
+      "name": "Correction_Camera",
+      "rotation": [
+        -0.70710676908493042,
+        -0,
+        0,
+        0.70710676908493042
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cube",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 2,
+            "POSITION": 1,
+            "TANGENT": 5,
+            "TEXCOORD_0": 3,
+            "TEXCOORD_1": 4
+          },
+          "indices": 0,
+          "mode": 4,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5121,
+      "count": 36,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 24,
+      "max": [
+        1.0000004768371582,
+        1,
+        1.0000005960464478
+      ],
+      "min": [
+        -1.0000003576278687,
+        -1,
+        -1.0000003576278687
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC4"
+    }
+  ],
+  "materials": [
+    {
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0,
+          "extensions": {
+            "KHR_texture_transform": {
+              "rotation": 0.39269908169872414,
+              "texCoord": 1
+            }
+          }
+        },
+        "baseColorFactor": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "metallicFactor": 1,
+        "roughnessFactor": 1
+      },
+      "emissiveTexture": {
+        "index": 1,
+        "texCoord": 0
+      },
+      "emissiveFactor": [
+        1,
+        1,
+        1
+      ],
+      "alphaMode": "OPAQUE",
+      "name": "Material"
+    }
+  ],
+  "textures": [
+    {
+      "source": 0
+    },
+    {
+      "source": 1
+    }
+  ],
+  "images": [
+    {
+      "uri": "uv0.png"
+    },
+    {
+      "uri": "uv1.png"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 36
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 36,
+      "byteLength": 288
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 324,
+      "byteLength": 288
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 612,
+      "byteLength": 192
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 804,
+      "byteLength": 192
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 996,
+      "byteLength": 384
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 1380,
+      "uri": "encoded_example.bin"
+    }
+  ],
+  "extensionsUsed": [
+    "KHR_texture_transform"
+  ]
+}

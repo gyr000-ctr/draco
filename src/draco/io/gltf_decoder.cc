@@ -549,6 +549,7 @@ Status GltfDecoder::LoadFile(const std::string& file_name,
     return Status(Status::DRACO_ERROR, "Unknown input file extension.");
   }
   DRACO_RETURN_IF_ERROR(CheckUnsupportedFeatures());
+  DRACO_RETURN_IF_ERROR(DensifySparseAccessors());
   input_file_name_ = file_name;
   return OkStatus();
 }
@@ -566,6 +567,7 @@ Status GltfDecoder::LoadBuffer(const DecoderBuffer& buffer) {
                   "TinyGLTF failed to load glb buffer: " + err);
   }
   DRACO_RETURN_IF_ERROR(CheckUnsupportedFeatures());
+  DRACO_RETURN_IF_ERROR(DensifySparseAccessors());
   input_file_name_.clear();
   return OkStatus();
 }
@@ -651,14 +653,6 @@ Status GltfDecoder::AddPrimitiveExtensionsToDracoMesh(
 }
 
 Status GltfDecoder::CheckUnsupportedFeatures() {
-  // Check for sparse accessors.
-  for (const auto& accessor : gltf_model_.accessors) {
-    if (accessor.sparse.isSparse) {
-      return Status(Status::UNSUPPORTED_FEATURE,
-                    "Sparse accessors are unsupported.");
-    }
-  }
-
   // Check for extensions.
   for (const auto& extension : gltf_model_.extensionsRequired) {
     if (extension != "KHR_materials_unlit" &&
@@ -678,6 +672,180 @@ Status GltfDecoder::CheckUnsupportedFeatures() {
       return Status(Status::UNSUPPORTED_FEATURE,
                     extension + " is unsupported.");
     }
+  }
+  return OkStatus();
+}
+
+namespace {
+
+// Checks that |byte_offset| + |required_bytes| starting at |byte_offset| of
+// buffer view |buffer_view_id| is within the bounds of the buffer view and its
+// buffer. |data| is set to the start of the data in the buffer.
+Status CheckSparseBufferView(const tinygltf::Model& model, int buffer_view_id,
+                             size_t byte_offset, size_t required_bytes,
+                             const char* sparse_part, const uint8_t** data) {
+  if (buffer_view_id < 0 ||
+      buffer_view_id >= static_cast<int>(model.bufferViews.size())) {
+    return Status(Status::DRACO_ERROR, std::string("Sparse accessor ") +
+                                           sparse_part +
+                                           " bufferView out of bounds.");
+  }
+  const tinygltf::BufferView& buffer_view = model.bufferViews[buffer_view_id];
+  if (buffer_view.buffer < 0 ||
+      buffer_view.buffer >= static_cast<int>(model.buffers.size())) {
+    return Status(Status::DRACO_ERROR,
+                  std::string("Sparse accessor ") + sparse_part +
+                      " bufferView references buffer out of bounds.");
+  }
+  const tinygltf::Buffer& buffer = model.buffers[buffer_view.buffer];
+  if (byte_offset > buffer_view.byteLength ||
+      required_bytes > buffer_view.byteLength - byte_offset) {
+    return Status(Status::DRACO_ERROR,
+                  std::string("Sparse accessor ") + sparse_part +
+                      " reading past the end of the bufferView.");
+  }
+  if (buffer_view.byteOffset > buffer.data.size() ||
+      buffer_view.byteLength > buffer.data.size() - buffer_view.byteOffset) {
+    return Status(Status::DRACO_ERROR,
+                  std::string("Sparse accessor ") + sparse_part +
+                      " bufferView reading past the end of the buffer.");
+  }
+  *data = buffer.data.data() + buffer_view.byteOffset + byte_offset;
+  return OkStatus();
+}
+
+}  // namespace
+
+Status GltfDecoder::DensifySparseAccessors() {
+  for (int accessor_index = 0;
+       accessor_index < static_cast<int>(gltf_model_.accessors.size());
+       ++accessor_index) {
+    // Note that |gltf_model_.accessors| is not modified in this loop so the
+    // reference stays valid while buffers and buffer views are appended.
+    tinygltf::Accessor& accessor = gltf_model_.accessors[accessor_index];
+    if (!accessor.sparse.isSparse) {
+      continue;
+    }
+    const auto& sparse = accessor.sparse;
+
+    const int num_components =
+        TinyGltfUtils::GetNumComponentsForType(accessor.type);
+    if (num_components <= 0) {
+      return Status(Status::DRACO_ERROR,
+                    "Sparse accessor has invalid accessor type.");
+    }
+    const int component_size =
+        tinygltf::GetComponentSizeInBytes(accessor.componentType);
+    if (component_size <= 0) {
+      return Status(Status::DRACO_ERROR,
+                    "Sparse accessor has invalid component type.");
+    }
+    const size_t element_size =
+        static_cast<size_t>(num_components) * component_size;
+    if (accessor.count < 0 || sparse.count < 0) {
+      return Status(Status::DRACO_ERROR,
+                    "Sparse accessor has a negative count.");
+    }
+    if (sparse.count > accessor.count) {
+      return Status(Status::DRACO_ERROR,
+                    "Sparse accessor count " + std::to_string(sparse.count) +
+                        " exceeds accessor count " +
+                        std::to_string(accessor.count) + ".");
+    }
+
+    // Copy the dense base data into a tightly packed buffer. When the
+    // accessor has no base bufferView, the base data is all zeros as
+    // required by the glTF 2.0 specification.
+    std::vector<uint8_t> dense_data(
+        static_cast<size_t>(accessor.count) * element_size, 0);
+    if (accessor.bufferView >= 0 && accessor.count > 0) {
+      DRACO_RETURN_IF_ERROR(
+          TinyGltfUtils::CheckAccessorBounds(gltf_model_, accessor));
+      const tinygltf::BufferView& buffer_view =
+          gltf_model_.bufferViews[accessor.bufferView];
+      const tinygltf::Buffer& buffer =
+          gltf_model_.buffers[buffer_view.buffer];
+      const uint8_t* const src = buffer.data.data() +
+                                 buffer_view.byteOffset + accessor.byteOffset;
+      const int byte_stride = accessor.ByteStride(buffer_view);
+      for (int i = 0; i < accessor.count; ++i) {
+        memcpy(dense_data.data() + i * element_size, src + i * byte_stride,
+               element_size);
+      }
+    }
+
+    // Validate and read the sparse indices.
+    const int index_component_size =
+        tinygltf::GetComponentSizeInBytes(sparse.indices.componentType);
+    if (sparse.indices.componentType !=
+            TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE &&
+        sparse.indices.componentType !=
+            TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT &&
+        sparse.indices.componentType !=
+            TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) {
+      return Status(Status::DRACO_ERROR,
+                    "Sparse accessor indices component type " +
+                        std::to_string(sparse.indices.componentType) +
+                        " is not supported.");
+    }
+    const uint8_t* indices_data = nullptr;
+    DRACO_RETURN_IF_ERROR(CheckSparseBufferView(
+        gltf_model_, sparse.indices.bufferView, sparse.indices.byteOffset,
+        static_cast<size_t>(sparse.count) * index_component_size, "indices",
+        &indices_data));
+
+    std::vector<uint32_t> sparse_indices(sparse.count);
+    std::unordered_set<uint32_t> used_indices;
+    for (int i = 0; i < sparse.count; ++i) {
+      uint32_t index = 0;
+      memcpy(&index, indices_data + i * index_component_size,
+             index_component_size);
+      if (index >= static_cast<uint32_t>(accessor.count)) {
+        return Status(Status::DRACO_ERROR,
+                      "Sparse accessor index " + std::to_string(index) +
+                          " out of bounds for accessor count " +
+                          std::to_string(accessor.count) + ".");
+      }
+      if (!used_indices.insert(index).second) {
+        return Status(Status::DRACO_ERROR,
+                      "Sparse accessor contains duplicate index " +
+                          std::to_string(index) + ".");
+      }
+      sparse_indices[i] = index;
+    }
+
+    // Validate and read the sparse values and use them to replace the dense
+    // base data at the sparse indices.
+    const uint8_t* values_data = nullptr;
+    DRACO_RETURN_IF_ERROR(CheckSparseBufferView(
+        gltf_model_, sparse.values.bufferView, sparse.values.byteOffset,
+        static_cast<size_t>(sparse.count) * element_size, "values",
+        &values_data));
+    for (int i = 0; i < sparse.count; ++i) {
+      memcpy(dense_data.data() + sparse_indices[i] * element_size,
+             values_data + i * element_size, element_size);
+    }
+
+    // Store the densified data in a new buffer and buffer view and make the
+    // accessor a regular tightly packed accessor. The component type, number
+    // of components, count, and the normalized flag are left unchanged so
+    // normalized and integer data is preserved exactly.
+    tinygltf::Buffer dense_buffer;
+    dense_buffer.data = std::move(dense_data);
+    gltf_model_.buffers.push_back(std::move(dense_buffer));
+
+    tinygltf::BufferView dense_buffer_view;
+    dense_buffer_view.buffer =
+        static_cast<int>(gltf_model_.buffers.size()) - 1;
+    dense_buffer_view.byteOffset = 0;
+    dense_buffer_view.byteLength =
+        gltf_model_.buffers.back().data.size();
+    gltf_model_.bufferViews.push_back(dense_buffer_view);
+
+    accessor.bufferView =
+        static_cast<int>(gltf_model_.bufferViews.size()) - 1;
+    accessor.byteOffset = 0;
+    accessor.sparse.isSparse = false;
   }
   return OkStatus();
 }

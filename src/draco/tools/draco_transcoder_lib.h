@@ -49,7 +49,6 @@ struct DracoTranscodingOptions {
 // glTF unsupported features:
 //  Input and Output:
 //    Morph targets. http://shortn/_zE5DLw8a9B
-//    Sparse accessors. http://shortn/_h3FwbzQl4f
 //    KHR_lights_punctual. http://shortn/_nzGk80wKtK
 //    KHR_materials_pbrSpecularGlossiness. http://shortn/_iz0VC6dIKe
 //    All vendor extensions.
