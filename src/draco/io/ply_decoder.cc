@@ -181,11 +181,13 @@ Status PlyDecoder::DecodeVertexData(const PlyElement* vertex_element) {
       return Status(Status::INVALID_PARAMETER,
                     "x, y, and z properties must have the same type");
     }
-    // TODO(ostava): For now assume the position types are float32 or int32.
+    // TODO(ostava): For now assume the position types are float32, float16 or
+    // int32.
     const DataType dt = x_prop->data_type();
-    if (dt != DT_FLOAT32 && dt != DT_INT32) {
+    if (dt != DT_FLOAT32 && dt != DT_INT32 && dt != DT_FLOAT16) {
       return Status(Status::INVALID_PARAMETER,
-                    "x, y, and z properties must be of type float32 or int32");
+                    "x, y, and z properties must be of type float32, float16 "
+                    "or int32");
     }
 
     GeometryAttribute va;
@@ -202,6 +204,9 @@ Status PlyDecoder::DecodeVertexData(const PlyElement* vertex_element) {
     } else if (dt == DT_INT32) {
       ReadPropertiesToAttribute<int32_t>(
           properties, out_point_cloud_->attribute(att_id), num_vertices);
+    } else if (dt == DT_FLOAT16) {
+      ReadPropertiesToAttribute<Float16>(
+          properties, out_point_cloud_->attribute(att_id), num_vertices);
     }
   }
 
@@ -210,24 +215,34 @@ Status PlyDecoder::DecodeVertexData(const PlyElement* vertex_element) {
   const PlyProperty* const n_y_prop = vertex_element->GetPropertyByName("ny");
   const PlyProperty* const n_z_prop = vertex_element->GetPropertyByName("nz");
   if (n_x_prop != nullptr && n_y_prop != nullptr && n_z_prop != nullptr) {
-    // For now, all normal properties must be set and of type float32
-    if (n_x_prop->data_type() == DT_FLOAT32 &&
-        n_y_prop->data_type() == DT_FLOAT32 &&
-        n_z_prop->data_type() == DT_FLOAT32) {
+    // For now, all normal properties must be set and of the same floating
+    // point type (float32 or float16).
+    const DataType n_dt = n_x_prop->data_type();
+    if ((n_dt == DT_FLOAT32 || n_dt == DT_FLOAT16) &&
+        n_y_prop->data_type() == n_dt && n_z_prop->data_type() == n_dt) {
       PlyPropertyReader<float> x_reader(n_x_prop);
       PlyPropertyReader<float> y_reader(n_y_prop);
       PlyPropertyReader<float> z_reader(n_z_prop);
       GeometryAttribute va;
-      va.Init(GeometryAttribute::NORMAL, nullptr, 3, DT_FLOAT32, false,
-              sizeof(float) * 3, 0);
+      va.Init(GeometryAttribute::NORMAL, nullptr, 3, n_dt, false,
+              DataTypeLength(n_dt) * 3, 0);
       const int att_id = out_point_cloud_->AddAttribute(va, true, num_vertices);
       for (PointIndex::ValueType i = 0; i < num_vertices; ++i) {
-        std::array<float, 3> val;
-        val[0] = x_reader.ReadValue(i);
-        val[1] = y_reader.ReadValue(i);
-        val[2] = z_reader.ReadValue(i);
-        out_point_cloud_->attribute(att_id)->SetAttributeValue(
-            AttributeValueIndex(i), &val[0]);
+        if (n_dt == DT_FLOAT16) {
+          std::array<Float16, 3> val;
+          val[0] = Float16(x_reader.ReadValue(i));
+          val[1] = Float16(y_reader.ReadValue(i));
+          val[2] = Float16(z_reader.ReadValue(i));
+          out_point_cloud_->attribute(att_id)->SetAttributeValue(
+              AttributeValueIndex(i), &val[0]);
+        } else {
+          std::array<float, 3> val;
+          val[0] = x_reader.ReadValue(i);
+          val[1] = y_reader.ReadValue(i);
+          val[2] = z_reader.ReadValue(i);
+          out_point_cloud_->attribute(att_id)->SetAttributeValue(
+              AttributeValueIndex(i), &val[0]);
+        }
       }
     }
   }

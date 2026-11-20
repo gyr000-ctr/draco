@@ -17,6 +17,7 @@
 
 #include <functional>
 
+#include "draco/core/float16.h"
 #include "draco/io/ply_reader.h"
 
 namespace draco {
@@ -68,6 +69,11 @@ class PlyPropertyReader {
       case DT_FLOAT64:
         convert_value_func_ = [this](int val_id) {
           return this->ConvertValue<double>(val_id);
+        };
+        break;
+      case DT_FLOAT16:
+        convert_value_func_ = [this](int val_id) {
+          return this->ConvertValue<Float16>(val_id);
         };
         break;
       default:

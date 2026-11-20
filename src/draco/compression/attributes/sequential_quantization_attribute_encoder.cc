@@ -29,7 +29,8 @@ bool SequentialQuantizationAttributeEncoder::Init(PointCloudEncoder* encoder,
   // This encoder currently works only for floating point attributes.
   const PointAttribute* const attribute =
       encoder->point_cloud()->attribute(attribute_id);
-  if (attribute->data_type() != DT_FLOAT32) {
+  if (attribute->data_type() != DT_FLOAT32 &&
+      attribute->data_type() != DT_FLOAT16) {
     return false;
   }
 

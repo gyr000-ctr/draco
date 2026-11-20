@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/draco_factory_tests.dir/link.d CMakeFiles/draco_factory_tests.dir/src/draco/io/file_reader_factory_test.cc.o CMakeFiles/draco_factory_tests.dir/src/draco/io/file_writer_factory_test.cc.o -o draco_factory_tests-1.5.9  -Wl,--start-group libdraco.a libdraco_gtest.a libdraco_gtest_main.a libdraco_test_common.a -Wl,--end-group

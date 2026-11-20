@@ -36,6 +36,8 @@ int32_t DataTypeLength(DataType dt) {
       return 8;
     case DT_BOOL:
       return 1;
+    case DT_FLOAT16:
+      return 2;
     default:
       return -1;
   }

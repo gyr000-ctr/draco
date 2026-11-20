@@ -74,17 +74,19 @@ Status ExpertEncoder::EncodePointCloudToBuffer(const PointCloud& pc,
     bool kd_tree_possible = true;
     // Kd-Tree encoder can be currently used only when the following conditions
     // are satisfied for all attributes:
-    //     -data type is float32 and quantization is enabled, OR
+    //     -data type is float32 or float16 and quantization is enabled, OR
     //     -data type is uint32, uint16, uint8 or int32, int16, int8
     for (int i = 0; i < pc.num_attributes(); ++i) {
       const PointAttribute* const att = pc.attribute(i);
       if (kd_tree_possible && att->data_type() != DT_FLOAT32 &&
+          att->data_type() != DT_FLOAT16 &&
           att->data_type() != DT_UINT32 && att->data_type() != DT_UINT16 &&
           att->data_type() != DT_UINT8 && att->data_type() != DT_INT32 &&
           att->data_type() != DT_INT16 && att->data_type() != DT_INT8) {
         kd_tree_possible = false;
       }
-      if (kd_tree_possible && att->data_type() == DT_FLOAT32 &&
+      if (kd_tree_possible &&
+          (att->data_type() == DT_FLOAT32 || att->data_type() == DT_FLOAT16) &&
           options().GetAttributeInt(i, "quantization_bits", -1) <= 0) {
         kd_tree_possible = false;  // Quantization not enabled.
       }

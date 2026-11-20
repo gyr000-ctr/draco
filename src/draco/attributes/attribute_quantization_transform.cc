@@ -20,9 +20,28 @@
 #include <vector>
 
 #include "draco/attributes/attribute_transform_type.h"
+#include "draco/core/float16.h"
 #include "draco/core/quantization_utils.h"
 
 namespace draco {
+
+namespace {
+
+// Reads the attribute value at |att_index| as floats into |out_val|.
+// |out_val| must be able to hold |num_components| values.
+void GetAttributeValueAsFloat(const PointAttribute& attribute,
+                              AttributeValueIndex att_index, int num_components,
+                              float* out_val) {
+  if (attribute.data_type() == DT_FLOAT32) {
+    // Fast path: the values are already stored as floats.
+    attribute.GetValue(att_index, out_val);
+    return;
+  }
+  // Convert the values (e.g. stored as Float16) to floats.
+  attribute.ConvertValue<float>(att_index, num_components, out_val);
+}
+
+}  // namespace
 
 bool AttributeQuantizationTransform::InitFromAttribute(
     const PointAttribute& attribute) {
@@ -70,7 +89,8 @@ bool AttributeQuantizationTransform::TransformAttribute(
 
 bool AttributeQuantizationTransform::InverseTransformAttribute(
     const PointAttribute& attribute, PointAttribute* target_attribute) {
-  if (target_attribute->data_type() != DT_FLOAT32) {
+  const DataType target_data_type = target_attribute->data_type();
+  if (target_data_type != DT_FLOAT32 && target_data_type != DT_FLOAT16) {
     return false;
   }
 
@@ -78,10 +98,8 @@ bool AttributeQuantizationTransform::InverseTransformAttribute(
   const int32_t max_quantized_value =
       (1u << static_cast<uint32_t>(quantization_bits_)) - 1;
   const int num_components = target_attribute->num_components();
-  const int entry_size = sizeof(float) * num_components;
   const std::unique_ptr<float[]> att_val(new float[num_components]);
   int quant_val_id = 0;
-  int out_byte_pos = 0;
   Dequantizer dequantizer;
   if (!dequantizer.Init(range_, max_quantized_value)) {
     return false;
@@ -91,6 +109,28 @@ bool AttributeQuantizationTransform::InverseTransformAttribute(
 
   const int num_values = target_attribute->size();
 
+  if (target_data_type == DT_FLOAT16) {
+    // Dequantize to floats and convert them to half precision values.
+    const int entry_size = sizeof(Float16) * num_components;
+    const std::unique_ptr<Float16[]> att_val_half(new Float16[num_components]);
+    int out_byte_pos = 0;
+    for (uint32_t i = 0; i < num_values; ++i) {
+      for (int c = 0; c < num_components; ++c) {
+        float value =
+            dequantizer.DequantizeFloat(source_attribute_data[quant_val_id++]);
+        value = value + min_values_[c];
+        att_val_half[c] = Float16(value);
+      }
+      // Store the half precision values into the attribute buffer.
+      target_attribute->buffer()->Write(out_byte_pos, att_val_half.get(),
+                                        entry_size);
+      out_byte_pos += entry_size;
+    }
+    return true;
+  }
+
+  const int entry_size = sizeof(float) * num_components;
+  int out_byte_pos = 0;
   for (uint32_t i = 0; i < num_values; ++i) {
     for (int c = 0; c < num_components; ++c) {
       float value =
@@ -140,13 +180,16 @@ bool AttributeQuantizationTransform::ComputeParameters(
   const std::unique_ptr<float[]> max_values(new float[num_components]);
   const std::unique_ptr<float[]> att_val(new float[num_components]);
   // Compute minimum values and max value difference.
-  attribute.GetValue(AttributeValueIndex(0), att_val.get());
-  attribute.GetValue(AttributeValueIndex(0), min_values_.data());
-  attribute.GetValue(AttributeValueIndex(0), max_values.get());
+  GetAttributeValueAsFloat(attribute, AttributeValueIndex(0), num_components,
+                           att_val.get());
+  GetAttributeValueAsFloat(attribute, AttributeValueIndex(0), num_components,
+                           min_values_.data());
+  GetAttributeValueAsFloat(attribute, AttributeValueIndex(0), num_components,
+                           max_values.get());
 
   for (AttributeValueIndex i(1); i < static_cast<uint32_t>(attribute.size());
        ++i) {
-    attribute.GetValue(i, att_val.get());
+    GetAttributeValueAsFloat(attribute, i, num_components, att_val.get());
     for (int c = 0; c < num_components; ++c) {
       if (std::isnan(att_val[c])) {
         return false;
@@ -236,7 +279,8 @@ void AttributeQuantizationTransform::GeneratePortableAttribute(
   const std::unique_ptr<float[]> att_val(new float[num_components]);
   for (PointIndex i(0); i < num_points; ++i) {
     const AttributeValueIndex att_val_id = attribute.mapped_index(i);
-    attribute.GetValue(att_val_id, att_val.get());
+    GetAttributeValueAsFloat(attribute, att_val_id, num_components,
+                             att_val.get());
     for (int c = 0; c < num_components; ++c) {
       const float value = (att_val[c] - min_values()[c]);
       const int32_t q_val = quantizer.QuantizeFloat(value);
@@ -262,7 +306,8 @@ void AttributeQuantizationTransform::GeneratePortableAttribute(
   const std::unique_ptr<float[]> att_val(new float[num_components]);
   for (uint32_t i = 0; i < point_ids.size(); ++i) {
     const AttributeValueIndex att_val_id = attribute.mapped_index(point_ids[i]);
-    attribute.GetValue(att_val_id, att_val.get());
+    GetAttributeValueAsFloat(attribute, att_val_id, num_components,
+                             att_val.get());
     for (int c = 0; c < num_components; ++c) {
       const float value = (att_val[c] - min_values()[c]);
       const int32_t q_val = quantizer.QuantizeFloat(value);

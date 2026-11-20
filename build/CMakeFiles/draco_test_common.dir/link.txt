@@ -1,0 +1,2 @@
+/usr/bin/ar qc libdraco_test_common.a CMakeFiles/draco_test_common.dir/src/draco/core/draco_test_utils.cc.o CMakeFiles/draco_test_common.dir/src/draco/core/status.cc.o
+/usr/bin/ranlib libdraco_test_common.a

@@ -1,0 +1,238 @@
+draco_tests-1.5.9: \
+  /usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/Scrt1.o \
+  /usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/crti.o \
+  /usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o \
+  CMakeFiles/draco_tests.dir/src/draco/animation/keyframe_animation_encoding_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/animation/keyframe_animation_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/attributes/point_attribute_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/compression/attributes/point_d_vector_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/compression/attributes/prediction_schemes/prediction_scheme_normal_octahedron_canonicalized_transform_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/compression/attributes/prediction_schemes/prediction_scheme_normal_octahedron_transform_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/compression/attributes/sequential_integer_attribute_encoding_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/compression/bit_coders/rans_coding_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/compression/decode_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/compression/encode_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/compression/entropy/shannon_entropy_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/compression/entropy/symbol_coding_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/compression/mesh/mesh_edgebreaker_encoding_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/compression/mesh/mesh_encoder_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/compression/point_cloud/point_cloud_kd_tree_encoding_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/compression/point_cloud/point_cloud_sequential_encoding_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/core/buffer_bit_coding_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/core/float16_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/core/math_utils_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/core/quantization_utils_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/core/status_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/core/vector_d_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/io/file_utils_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/io/file_writer_utils_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/io/stdio_file_reader_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/io/stdio_file_writer_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/io/obj_decoder_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/io/obj_encoder_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/io/ply_decoder_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/io/ply_reader_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/io/stl_decoder_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/io/stl_encoder_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/io/point_cloud_io_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/mesh/corner_table_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/mesh/mesh_are_equivalent_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/mesh/mesh_cleanup_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/mesh/triangle_soup_mesh_builder_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/metadata/metadata_encoder_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/metadata/metadata_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/point_cloud/point_cloud_builder_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/point_cloud/point_cloud_test.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/core/draco_test_utils.cc.o \
+  CMakeFiles/draco_tests.dir/src/draco/core/status.cc.o \
+  CMakeFiles/draco_tests.dir/third_party/googletest/googletest/src/gtest-all.cc.o \
+  CMakeFiles/draco_tests.dir/third_party/googletest/googletest/src/gtest_main.cc.o \
+  libdraco.a \
+  libdraco_gtest.a \
+  libdraco_gtest_main.a \
+  libdraco_test_common.a \
+  /usr/lib/gcc/x86_64-linux-gnu/15/libstdc++.so \
+  /usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libm.so \
+  /usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libm.so \
+  /usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libm.so \
+  /usr/lib/x86_64-linux-gnu/libm.so.6 \
+  /usr/lib/x86_64-linux-gnu/libmvec.so.1 \
+  /usr/lib/gcc/x86_64-linux-gnu/15/libgcc_s.so \
+  /usr/lib/gcc/x86_64-linux-gnu/15/libgcc_s.so \
+  /usr/lib/gcc/x86_64-linux-gnu/15/libgcc_s.so \
+  /usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libgcc_s.so.1 \
+  /usr/lib/gcc/x86_64-linux-gnu/15/libgcc.a \
+  /usr/lib/gcc/x86_64-linux-gnu/15/libgcc.a \
+  /usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libc.so \
+  /usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libc.so \
+  /usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libc.so \
+  /usr/lib/x86_64-linux-gnu/libc.so.6 \
+  /usr/lib/x86_64-linux-gnu/libc_nonshared.a \
+  /lib64/ld-linux-x86-64.so.2 \
+  /usr/lib/gcc/x86_64-linux-gnu/15/libgcc_s.so \
+  /usr/lib/gcc/x86_64-linux-gnu/15/libgcc_s.so \
+  /usr/lib/gcc/x86_64-linux-gnu/15/libgcc_s.so \
+  /usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libgcc_s.so.1 \
+  /usr/lib/gcc/x86_64-linux-gnu/15/libgcc.a \
+  /usr/lib/gcc/x86_64-linux-gnu/15/libgcc.a \
+  /usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o \
+  /usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/crtn.o \
+  /lib64/ld-linux-x86-64.so.2
+
+/usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/Scrt1.o:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/crti.o:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o:
+
+CMakeFiles/draco_tests.dir/src/draco/animation/keyframe_animation_encoding_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/animation/keyframe_animation_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/attributes/point_attribute_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/compression/attributes/point_d_vector_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/compression/attributes/prediction_schemes/prediction_scheme_normal_octahedron_canonicalized_transform_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/compression/attributes/prediction_schemes/prediction_scheme_normal_octahedron_transform_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/compression/attributes/sequential_integer_attribute_encoding_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/compression/bit_coders/rans_coding_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/compression/decode_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/compression/encode_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/compression/entropy/shannon_entropy_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/compression/entropy/symbol_coding_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/compression/mesh/mesh_edgebreaker_encoding_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/compression/mesh/mesh_encoder_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/compression/point_cloud/point_cloud_kd_tree_encoding_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/compression/point_cloud/point_cloud_sequential_encoding_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/core/buffer_bit_coding_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/core/float16_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/core/math_utils_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/core/quantization_utils_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/core/status_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/core/vector_d_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/io/file_utils_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/io/file_writer_utils_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/io/stdio_file_reader_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/io/stdio_file_writer_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/io/obj_decoder_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/io/obj_encoder_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/io/ply_decoder_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/io/ply_reader_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/io/stl_decoder_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/io/stl_encoder_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/io/point_cloud_io_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/mesh/corner_table_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/mesh/mesh_are_equivalent_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/mesh/mesh_cleanup_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/mesh/triangle_soup_mesh_builder_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/metadata/metadata_encoder_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/metadata/metadata_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/point_cloud/point_cloud_builder_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/point_cloud/point_cloud_test.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/core/draco_test_utils.cc.o:
+
+CMakeFiles/draco_tests.dir/src/draco/core/status.cc.o:
+
+CMakeFiles/draco_tests.dir/third_party/googletest/googletest/src/gtest-all.cc.o:
+
+CMakeFiles/draco_tests.dir/third_party/googletest/googletest/src/gtest_main.cc.o:
+
+libdraco.a:
+
+libdraco_gtest.a:
+
+libdraco_gtest_main.a:
+
+libdraco_test_common.a:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/libstdc++.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libm.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libm.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libm.so:
+
+/usr/lib/x86_64-linux-gnu/libm.so.6:
+
+/usr/lib/x86_64-linux-gnu/libmvec.so.1:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/libgcc_s.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/libgcc_s.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/libgcc_s.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libgcc_s.so.1:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/libgcc.a:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/libgcc.a:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libc.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libc.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libc.so:
+
+/usr/lib/x86_64-linux-gnu/libc.so.6:
+
+/usr/lib/x86_64-linux-gnu/libc_nonshared.a:
+
+/lib64/ld-linux-x86-64.so.2:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/libgcc_s.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/libgcc_s.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/libgcc_s.so:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libgcc_s.so.1:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/libgcc.a:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/libgcc.a:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/crtendS.o:
+
+/usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/crtn.o:
+
+/lib64/ld-linux-x86-64.so.2:

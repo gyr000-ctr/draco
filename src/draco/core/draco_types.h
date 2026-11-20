@@ -37,6 +37,9 @@ enum DataType {
   DT_FLOAT32,
   DT_FLOAT64,
   DT_BOOL,
+  // 16-bit IEEE 754 half precision floating point type. Appended after all
+  // pre-existing types so their bit-stream ordinals remain unchanged.
+  DT_FLOAT16,
   DT_TYPES_COUNT
 };
 

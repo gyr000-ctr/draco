@@ -270,7 +270,8 @@ bool PlyReader::ParseElementDataAscii(DecoderBuffer* buffer,
       // Read and store the actual property data.
       for (int v = 0; v < num_entries; ++v) {
         parser::SkipWhitespace(buffer);
-        if (prop.data_type() == DT_FLOAT32 || prop.data_type() == DT_FLOAT64) {
+        if (prop.data_type() == DT_FLOAT32 || prop.data_type() == DT_FLOAT64 ||
+            prop.data_type() == DT_FLOAT16) {
           float val;
           if (!parser::ParseFloat(buffer, &val)) {
             return false;
@@ -335,6 +336,9 @@ DataType PlyReader::GetDataTypeFromString(const std::string& name) const {
   }
   if (name == "double" || name == "float64") {
     return DT_FLOAT64;
+  }
+  if (name == "half" || name == "float16") {
+    return DT_FLOAT16;
   }
   return DT_INVALID;
 }

@@ -50,7 +50,7 @@ bool KdTreeAttributesEncoder::TransformAttributesToPortableFormat() {
     const int att_id = GetAttributeId(i);
     const PointAttribute* const att =
         encoder()->point_cloud()->attribute(att_id);
-    if (att->data_type() == DT_FLOAT32) {
+    if (att->data_type() == DT_FLOAT32 || att->data_type() == DT_FLOAT16) {
       // Quantization path.
       AttributeQuantizationTransform attribute_quantization_transform;
       const int quantization_bits = encoder()->options()->GetAttributeInt(
@@ -124,7 +124,8 @@ bool KdTreeAttributesEncoder::EncodeDataNeededByPortableTransforms(
     const int32_t att_id = GetAttributeId(i);
     const PointAttribute* const att =
         encoder()->point_cloud()->attribute(att_id);
-    if (att != nullptr && att->data_type() == DT_FLOAT32 &&
+    if (att != nullptr &&
+        (att->data_type() == DT_FLOAT32 || att->data_type() == DT_FLOAT16) &&
         quant_transform_idx < attribute_quantization_transforms_.size()) {
       const size_t before_bytes = out_buffer->size();
       attribute_quantization_transforms_[quant_transform_idx++]
@@ -198,7 +199,8 @@ bool KdTreeAttributesEncoder::EncodePortableAttributes(
         att->data_type() == DT_INT16 || att->data_type() == DT_INT8) {
       // Use the original attribute.
       source_att = att;
-    } else if (att->data_type() == DT_FLOAT32) {
+    } else if (att->data_type() == DT_FLOAT32 ||
+               att->data_type() == DT_FLOAT16) {
       // Use the portable (quantized) attribute instead.
       source_att =
           quantized_portable_attributes_[num_processed_quantized_attributes]

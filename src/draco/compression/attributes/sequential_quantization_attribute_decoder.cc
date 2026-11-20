@@ -29,7 +29,8 @@ bool SequentialQuantizationAttributeDecoder::Init(PointCloudDecoder* decoder,
   const PointAttribute* const attribute =
       decoder->point_cloud()->attribute(attribute_id);
   // Currently we can quantize only floating point arguments.
-  if (attribute->data_type() != DT_FLOAT32) {
+  if (attribute->data_type() != DT_FLOAT32 &&
+      attribute->data_type() != DT_FLOAT16) {
     return false;
   }
   return true;

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libdraco_gtest.a "CMakeFiles/draco_gtest.dir/third_party/googletest/googletest/src/gtest-all.cc.o"
+/usr/bin/ranlib libdraco_gtest.a

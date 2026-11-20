@@ -174,7 +174,8 @@ bool KdTreeAttributesDecoder::DecodePortableAttributes(
         min_signed_values_.push_back(0);
       }
       target_att = att;
-    } else if (att->data_type() == DT_FLOAT32) {
+    } else if (att->data_type() == DT_FLOAT32 ||
+               att->data_type() == DT_FLOAT16) {
       // Create a portable attribute that will hold the decoded data. We will
       // dequantize the decoded data to the final attribute later on.
       const int num_components = att->num_components();
@@ -280,7 +281,7 @@ bool KdTreeAttributesDecoder::DecodeDataNeededByPortableTransforms(
       const int att_id = GetAttributeId(i);
       const PointAttribute* const att =
           GetDecoder()->point_cloud()->attribute(att_id);
-      if (att->data_type() == DT_FLOAT32) {
+      if (att->data_type() == DT_FLOAT32 || att->data_type() == DT_FLOAT16) {
         const int num_components = att->num_components();
         min_value.resize(num_components);
         if (!in_buffer->Decode(&min_value[0], sizeof(float) * num_components)) {
@@ -523,7 +524,8 @@ bool KdTreeAttributesDecoder::TransformAttributesToOriginalFormat() {
         }
       }
       num_processed_signed_components += att->num_components();
-    } else if (att->data_type() == DT_FLOAT32) {
+    } else if (att->data_type() == DT_FLOAT32 ||
+               att->data_type() == DT_FLOAT16) {
       // TODO(ostava): This code should be probably moved out to attribute
       // transform and shared with the SequentialQuantizationAttributeDecoder.
 
@@ -545,6 +547,16 @@ bool KdTreeAttributesDecoder::TransformAttributesToOriginalFormat() {
         // mechanism that would allow to use the final attributes as portable
         // attributes for predictors that may need them.
         att->CopyFrom(*src_att);
+        continue;
+      }
+
+      if (att->data_type() == DT_FLOAT16) {
+        // Dequantize the values directly to half precision floats.
+        if (!attribute_quantization_transforms_
+                 [num_processed_quantized_attributes - 1]
+                     .InverseTransformAttribute(*src_att, att)) {
+          return false;
+        }
         continue;
       }
 

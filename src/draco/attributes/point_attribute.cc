@@ -116,6 +116,9 @@ AttributeValueIndex::ValueType PointAttribute::DeduplicateValues(
     case DT_INT32:
       unique_vals = DeduplicateTypedValues<int32_t>(in_att, in_att_offset);
       break;
+    case DT_FLOAT16:
+      unique_vals = DeduplicateTypedValues<Float16>(in_att, in_att_offset);
+      break;
     default:
       return -1;  // Unsupported data type.
   }

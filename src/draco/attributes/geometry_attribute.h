@@ -22,6 +22,7 @@
 
 #include "draco/attributes/geometry_indices.h"
 #include "draco/core/data_buffer.h"
+#include "draco/core/float16.h"
 #include "draco/core/hash_utils.h"
 #include "draco/draco_features.h"
 #ifdef DRACO_TRANSCODER_SUPPORTED
@@ -211,6 +212,9 @@ class GeometryAttribute {
       case DT_FLOAT64:
         return ConvertTypedValue<double, OutT>(att_id, out_num_components,
                                                out_val);
+      case DT_FLOAT16:
+        return ConvertTypedValue<Float16, OutT>(att_id, out_num_components,
+                                                out_val);
       case DT_BOOL:
         return ConvertTypedValue<bool, OutT>(att_id, out_num_components,
                                              out_val);
@@ -384,10 +388,12 @@ class GeometryAttribute {
       }
 
       // Check conversion of floating point |in_value| to integral value OutT.
+      // Float16 is treated as a floating point type here.
 #if __cplusplus >= 201703L
-      if constexpr (std::is_floating_point<T>::value) {
+      if constexpr (std::is_floating_point<T>::value ||
+                    std::is_same<T, Float16>::value) {
 #else
-      if (std::is_floating_point<T>::value) {
+      if (std::is_floating_point<T>::value || std::is_same<T, Float16>::value) {
 #endif
         // Make sure the floating point |in_value| is not NaN and not Inf as
         // integral type OutT is unable to represent these values.
@@ -431,10 +437,12 @@ class GeometryAttribute {
         *out_value = static_cast<OutT>(in_value);
         *out_value /= static_cast<OutT>(std::numeric_limits<T>::max());
 #if __cplusplus >= 201703L
-      } else if constexpr (std::is_floating_point<T>::value &&
+      } else if constexpr ((std::is_floating_point<T>::value ||
+                            std::is_same<T, Float16>::value) &&
                            std::is_integral<OutT>::value) {
 #else
-      } else if (std::is_floating_point<T>::value &&
+      } else if ((std::is_floating_point<T>::value ||
+                  std::is_same<T, Float16>::value) &&
                  std::is_integral<OutT>::value) {
 #endif
         // Converting from floating point to a normalized integer.
@@ -529,6 +537,9 @@ Status GeometryAttribute::ConvertAndSetAttributeValue(AttributeValueIndex avi,
           avi, input_num_components, value);
     case DT_FLOAT64:
       return ConvertAndSetAttributeTypedValue<InputT, double>(
+          avi, input_num_components, value);
+    case DT_FLOAT16:
+      return ConvertAndSetAttributeTypedValue<InputT, Float16>(
           avi, input_num_components, value);
     case DT_BOOL:
       return ConvertAndSetAttributeTypedValue<InputT, bool>(

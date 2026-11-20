@@ -366,6 +366,7 @@ list(
          "${draco_src_root}/core/draco_version.h"
          "${draco_src_root}/core/encoder_buffer.cc"
          "${draco_src_root}/core/encoder_buffer.h"
+         "${draco_src_root}/core/float16.h"
          "${draco_src_root}/core/hash_utils.cc"
          "${draco_src_root}/core/hash_utils.h"
          "${draco_src_root}/core/int_utils.h"

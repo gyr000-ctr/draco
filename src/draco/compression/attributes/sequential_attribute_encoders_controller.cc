@@ -160,6 +160,18 @@ SequentialAttributeEncodersController::CreateSequentialEncoder(int i) {
 #endif
       }
       break;
+    case DT_FLOAT16:
+      if (encoder()->options()->GetAttributeInt(att_id, "quantization_bits",
+                                                -1) > 0) {
+        // Half precision floating point values are quantized after
+        // conversion to full precision floats. Note that the octahedral
+        // normal encoding is not supported for this data type.
+        return std::unique_ptr<SequentialAttributeEncoder>(
+            new SequentialQuantizationAttributeEncoder());
+      }
+      // Without quantization, half precision values are encoded losslessly
+      // using the default encoder (exact bit patterns are preserved).
+      break;
     default:
       break;
   }
